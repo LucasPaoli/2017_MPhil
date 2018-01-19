@@ -1,0 +1,429 @@
+\documentclass[12pt]{article}
+\usepackage[utf8]{inputenc} 
+\usepackage[T1]{fontenc}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage[francais]{babel} 
+\usepackage[top=2cm, bottom=2cm, left=2cm, right=2cm]{geometry}
+\usepackage{setspace}
+\usepackage{listings}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{sidecap}
+\usepackage{pdfpages}
+\usepackage{sidecap}
+\usepackage{multicol}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\setlist[itemize]{noitemsep}
+\usepackage{xcolor}
+\usepackage{mdframed}
+\newmdenv[%
+    leftmargin=-5pt,
+    rightmargin=-5pt, 
+    innerleftmargin=5pt,
+    innerrightmargin=5pt,
+    backgroundcolor=brown!10,
+]{Answer}%
+
+
+
+\begin{document}
+\makeatletter
+\thispagestyle{empty}
+	\begin{center}
+		\vspace*{-1cm}
+		\noindent\hrulefill
+		\vspace{0.5cm}
+		
+		\begin{minipage}[c]{0.7\textwidth}
+			\bf\Large\centering
+			RM01 - Option A - Examined Assignment\end{minipage}
+
+		\vspace{0.5cm}
+		\noindent\hrulefill	
+		\vspace{0.5cm}
+		
+		{
+			LE456 
+			\vspace{0.5cm}			
+		}
+	\end{center}
+\makeatother
+
+\section{Introduction}
+
+\textit{The housing wealth effect often manifests as a positive relationship between consumption and perceived housing wealth (e.g., the perceived value of houses). When the perceived value of a property rises, homeowners may feel more comfortable and secure about their wealth, causing them to spend more. Does this apply to energy consumption in the UK? Choose a subset of variables from the project dataset to find answers to this question.}
+
+\textit{You should focus on verifying the existence of the relationship between housing wealth and energy consumption, while controlling for property characteristics as well as a large number of demographic, socio-economic and energy-use behaviour variables. You may also test other relevant hypotheses, for example, whether there is a non-linear relationship; or whether the relationship is different in London compared to other areas.}
+
+The housing wealth effect, however controversial in certain cases (Buiter, 2008; Calomiris et al., 2009), corresponds to the positive relationship between perceived housing wealth and consumption (Case et al., 2005; Carroll et al., 2011). Said effect and its relationship to energy consumption will be investigated within the dataset.
+
+All analysis were performed on R version 3.3.2 and the source scripts are available on Github ()
+
+\section{Preliminary Data Analysis}
+\begin{enumerate}
+\item In worksheet Question 1 there are data on public expenditure on education ($EE$), gross domestic product ($GDP$), and population ($P$) for thirty-four countries in the year 1980. The following regression model is to be estimated.
+\\ \\
+$y_t = \beta_1 + \beta_2 x_t + \epsilon_t$, where $y_t = \frac{EE_t}{P_t}$ and $x_t=\frac{GDP_t}{P_t}$
+\\ \\
+It is suspected that $\epsilon_t$ may be heteroscedastic with a variance related to $x_t$
+\begin{enumerate}
+\item Estimate the regression model using lease squares. Plot the least squares function and the residuals. Is there any evidence of heteroskedasticity?
+
+\begin{Answer}
+
+We estimate the regression model using the \verb|lm()| from R, below is its \verb|summary()| :
+
+\begin{verbatim}
+Call:
+lm(formula = Y ~ X, data = data.df)
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-0.21682 -0.08804 -0.01401  0.06517  0.38156 
+
+Coefficients:
+             Estimate Std. Error t value Pr(>|t|)    
+(Intercept) -0.124573   0.048523  -2.567   0.0151 *  
+X            0.073173   0.005179  14.128 2.65e-15 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 0.1359 on 32 degrees of freedom
+Multiple R-squared:  0.8618,	Adjusted R-squared:  0.8575 
+F-statistic: 199.6 on 1 and 32 DF,  p-value: 2.65e-15
+\end{verbatim}
+
+An analysis of the diagnostic plots (Figure 1) gives evidence for heteroskedasticity as the variance increases with $x$.
+
+\end{Answer}
+
+\item Test for heteroskedasticity using the Goldfeld-Quandt test.
+
+\begin{Answer}
+Using the \verb|qgtest| function :
+\begin{verbatim}
+	Goldfeld-Quandt test
+
+data:  model.1
+GQ = 1.8425, df1 = 15, df2 = 15, p-value = 0.124
+alternative hypothesis: variance increases from segment 1 to 2
+\end{verbatim}
+
+It appears there is no significant evidence for heteroskedasticity.
+
+\end{Answer}
+
+\item Re-estimate the equation under the assumption that $var(\epsilon_t)=\sigma^2x_t$. Report the
+results. Compare and comment on the results from step a) and c).
+
+\begin{Answer}
+
+We can improve the linear model using a function robust to heteroskedasticity, the function \verb|rlm()| from the package \verb|MASS|, below is its \verb|summary()| :
+
+\begin{verbatim}
+Call: rlm(formula = Y ~ X, data = data.df)
+Residuals:
+      Min        1Q    Median        3Q       Max 
+-0.181473 -0.085377 -0.004898  0.065786  0.423762 
+
+Coefficients:
+            Value   Std. Error t value
+(Intercept) -0.1065  0.0443    -2.4040
+X            0.0691  0.0047    14.6148
+
+Residual standard error: 0.1195 on 32 degrees of freedom
+\end{verbatim}
+
+Results are highly similar, suggesting a very slight heteroskedasticity, as suggested by the Goldfeld-Quandt test.
+
+\end{Answer}
+\end{enumerate}
+
+\item The worksheet Question 2 contains 30 observations on variables potentially relevant for modeling the demand for ice cream. Each observation represents a four-week period. The variables are :\\ \\
+$T$: time index\\
+$Q$: per capital consumption of ice cream in pints\\
+$P$: price per pint in pounds\\
+$I$: weekly family income in pounds\\
+$F$: mean temperature in Fahrenheit\\
+
+\begin{enumerate}
+\item Use least squares to estimate the model
+\\ \\
+$Q_t = \beta_1 + \beta_2 P_t + \beta_3 I_t + \beta_4 F_t + \epsilon_t$
+\\
+
+\begin{Answer}
+
+We estimate the regression model using the \verb|lm()| from R, below is its \verb|summary()| :
+
+\begin{verbatim}
+Call:
+lm(formula = Q ~ P + I + F, data = data.df2)
+
+Residuals:
+      Min        1Q    Median        3Q       Max 
+-0.065302 -0.011873  0.002737  0.015953  0.078986 
+
+Coefficients:
+              Estimate Std. Error t value Pr(>|t|)    
+(Intercept)  0.1973151  0.2702162   0.730  0.47179    
+P           -1.0444140  0.8343573  -1.252  0.22180    
+I            0.0033078  0.0011714   2.824  0.00899 ** 
+F            0.0034584  0.0004455   7.762  3.1e-08 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 0.03683 on 26 degrees of freedom
+Multiple R-squared:  0.719,	Adjusted R-squared:  0.6866 
+F-statistic: 22.17 on 3 and 26 DF,  p-value: 2.451e-07
+\end{verbatim}
+\end{Answer}
+
+\item Are there any coefficient estimates that are not significantly different from zero? Do you think the corresponding variable(s) is (are) not relevant for explaining ice cream demand?
+
+\begin{Answer}
+Price doesn't seem to have any significant effect on the sells. But it also appears that it's not varying much across the data. So I would carefully conclude that as far as this dataset goes, the price doesn't effect the sells.
+\end{Answer}
+
+\item Is there any evidence of autocorrelated errors? Check for runs of positive and negative least squares residuals, as well as using the Durbin-Watson test statistics.
+
+\begin{Answer}
+Plot (Figure 2) as well as the Durbin-Watson test suggest strong autocorrelation in the data.
+\begin{verbatim}
+ lag Autocorrelation D-W Statistic p-value
+   1       0.3297724       1.02117       0
+ Alternative hypothesis: rho != 0
+\end{verbatim}
+\end{Answer}
+
+\end{enumerate}
+
+\end{enumerate}
+
+%\begin{figure}[!h]
+%\begin{center}
+%\includegraphics[width=10cm]{figure1.pdf}
+%\end{center}
+%\caption{\footnotesize{Residuals and least squares function}}
+%\label{Figure 1}
+%\end{figure}
+
+%\begin{figure}[!h]
+%\begin{center}
+%\includegraphics[width=10cm]{figure2.pdf}
+%\end{center}
+%\caption{\footnotesize{Residuals and least squares function}}
+%\label{Figure 1}
+%\end{figure}
+
+\clearpage
+
+\section{Model Selection and Evaluation}
+\begin{enumerate}
+
+\item Data on the weekly sales of a major brand of canned tuna by a supermarket chain in a large Midwestern U.S. city during a recent calendar year are given in worksheet Question 1. There are 52 observations on the variables : \\ \\
+$Sal1$ = Unit sales of brand no. 1 canned tuna\\
+$Apr1$ = Price (in pounds) per can of brand no. 1 canned tuna\\
+$Apr2$ = Price (in pounds) per can of brand no. 2 of canned tuna\\
+$Apr3$ = Price (in pounds) per can of brand no. 3 of canned tuna\\
+$Disp$ = a dummy variable that takes the value 1 if there is a store display for brand no. 1 during the week but no newspaper ad; 0 otherwise.\\
+$DispAd$ = a dummy variable that takes the value 1 if there is a store display and a newspaper ad during the week, 0 otherwise.\\
+
+\begin{enumerate}
+\item Estimate, by least squares, the log-linear model :\\
+$ln(Sal1) = \beta_1 + \beta_2 Apr1 + \beta_3 Apr2 + \beta_4 Apr3 + \beta_5 Disp + \beta_6 DispAd + \epsilon$
+
+\begin{Answer}
+
+We estimate the regression model using the \verb|lm()| from R, below is its \verb|summary()| :
+
+\begin{verbatim}
+Call:
+lm(formula = log(Sal1) ~ Apr1 + Apr2 + Apr3 + Disp + DispAd, 
+    data = data.df)
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-0.70001 -0.21573 -0.03785  0.26241  0.74457 
+
+Coefficients:
+            Estimate Std. Error t value Pr(>|t|)    
+(Intercept)   8.9848     0.6464  13.900  < 2e-16 ***
+Apr1         -3.7463     0.5765  -6.498 5.17e-08 ***
+Apr2          1.1495     0.4486   2.562 0.013742 *  
+Apr3          1.2880     0.6053   2.128 0.038739 *  
+Disp          0.4237     0.1052   4.028 0.000209 ***
+DispAd        1.4313     0.1562   9.165 6.04e-12 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 0.3397 on 46 degrees of freedom
+Multiple R-squared:  0.8428,	Adjusted R-squared:  0.8257 
+F-statistic: 49.33 on 5 and 46 DF,  p-value: < 2.2e-16
+\end{verbatim}
+\end{Answer}
+
+\item Discuss and interpret the estimates of $\beta_2$, $\beta_3$ and $\beta_4$ \\
+\begin{Answer}
+$\beta_2$ is negative, meaning that the sells go down as the price of the brand goes up.\\
+$\beta_3$ and $\beta_4$ are positive, meaning that the sells go up as the price of other brands go up.
+\end{Answer}
+
+\item Are the sign and relative magnitudes of the estimates of $\beta_5$ and $\beta_6$ consistent with economic logic?\\
+\begin{Answer}
+$\beta_5$ and $\beta_6$ are positive, meaning advertisement has a positive effect on the sale. Additionally $\beta_5 < \beta_6$ is explained by the fact that $DispAd$ has both in store and newspaper ad. This appears to be consistent with economic logic.
+\end{Answer}
+
+\item Test, at the 5\% level of significance, each of the following hypotheses :\\
+\begin{enumerate}
+\item $H_0:\beta_5 = 0, H_1:\beta_5\ne0$
+\begin{Answer}
+We can reject $H_0$ (significant and Residual Sum of Squares is lower), either looking at the summary are comparing the two models using \verb|anova()|:
+\begin{verbatim}
+Analysis of Variance Table
+
+Model 1: log(Sal1) ~ Apr1 + Apr2 + Apr3 + DispAd
+Model 2: log(Sal1) ~ Apr1 + Apr2 + Apr3 + Disp + DispAd
+  Res.Df    RSS Df Sum of Sq  Pr(>Chi)    
+1     47 7.1788                           
+2     46 5.3073  1    1.8716 5.634e-05 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+\end{verbatim}
+\end{Answer}
+\item $H_0:\beta_6 = 0, H_1:\beta_6\ne0$
+\begin{Answer}
+We can reject $H_0$ as well :
+\begin{verbatim}
+Analysis of Variance Table
+
+Model 1: log(Sal1) ~ Apr1 + Apr2 + Apr3 + Disp
+Model 2: log(Sal1) ~ Apr1 + Apr2 + Apr3 + Disp + DispAd
+  Res.Df     RSS Df Sum of Sq  Pr(>Chi)    
+1     47 14.9988                           
+2     46  5.3073  1    9.6915 < 2.2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+\end{verbatim}
+\end{Answer}
+\end{enumerate}
+\end{enumerate}
+
+\item Worksheet Question 2 contains starting salary ($Y$), years of education ($X$), previous work experience ($E$) and hiring time ($T$) for 93 employees of a bank. Suppose that you have been hired by an equal opportunity agency to investigate whether there has been any salary discrimination on the basis of gender. Let $G$ be a gender dummy variable that is equal to 1 for the males and 0 for the females.\\
+\begin{enumerate}
+\item Estimate the model $Yt = \beta_1 + \delta G_t + \epsilon_t$. How would you test whether male salaries are significantly greater than female salaries? Carry out this test at the 5\% level of significance. What criticism could be levelled at this test?\\
+\begin{Answer}
+
+We estimate the regression model using the \verb|lm()| from R, below is its \verb|summary()| :
+
+\begin{verbatim}
+Call:
+lm(formula = Y ~ G, data = data.df2)
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-1336.88  -338.85    43.12   261.15  2143.12 
+
+Coefficients:
+            Estimate Std. Error t value Pr(>|t|)    
+(Intercept)  5138.85      76.26  67.390  < 2e-16 ***
+G             818.02     130.00   6.293 1.08e-08 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 595.6 on 91 degrees of freedom
+  (1 observation deleted due to missingness)
+Multiple R-squared:  0.3032,	Adjusted R-squared:  0.2955 
+F-statistic:  39.6 on 1 and 91 DF,  p-value: 1.076e-08
+\end{verbatim}
+
+To test whether gender as an effect can be rephrased as : $H_0:\delta = 0, H_1:\delta\ne0$, which is done in the summary already.
+
+Because we can reject $H_0$ it means gender as an effect. However, one could criticise that this doesn't take into account work experience, education...
+
+\end{Answer}
+
+\item Estimate the model \\
+$Yt =\beta_1 +\delta G_t +\beta_2 X_t +\beta_3 E_t +\beta_4 T_t +\epsilon_t$\\
+Repeat the test performed in part (a). Why is the test based on this model an improvement over that done in part (a)? Do you think there is any discrimination against female employees?
+
+\begin{Answer}
+
+We estimate the regression model using the \verb|lm()| from R, below is its \verb|summary()| :
+
+\begin{verbatim}
+Call:
+lm(formula = Y ~ G + X + E + T, data = data.df2)
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-1238.90  -353.05   -16.61   280.02  1568.80 
+
+Coefficients:
+             Estimate Std. Error t value Pr(>|t|)    
+(Intercept) 3526.3818   327.7225  10.760  < 2e-16 ***
+G            722.3029   117.8246   6.130 2.42e-08 ***
+X             90.0191    24.6932   3.646 0.000451 ***
+E              1.2679     0.5871   2.160 0.033526 *  
+T             23.4276     5.2001   4.505 2.03e-05 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 507.4 on 88 degrees of freedom
+  (1 observation deleted due to missingness)
+Multiple R-squared:  0.5109,	Adjusted R-squared:  0.4887 
+F-statistic: 22.98 on 4 and 88 DF,  p-value: 5.068e-13
+\end{verbatim}
+
+$G$ estimated is equal to roughly 722 and is highly significant : there is a high wage gap between genders. \\
+
+Can be confirmed by a type II anova : \\
+\begin{verbatim}
+Anova Table (Type II tests)
+
+Response: Y
+            Sum Sq Df F value    Pr(>F)    
+G          9675992  1 37.5809 2.423e-08 ***
+X          3421714  1 13.2897 0.0004511 ***
+E          1200771  1  4.6637 0.0335264 *  
+T          5225961  1 20.2973 2.029e-05 ***
+Residuals 22657464 88                      
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+\end{verbatim}
+
+\end{Answer}
+
+\end{enumerate}
+
+\end{enumerate}
+
+\section{Empirical Findings and Discussions}
+
+\section{Conclusion}
+
+\section{Bibliography}
+\begin{enumerate}
+
+\item Buiter, W. H. (2008). Housing wealth isn't wealth (No. w14204). National Bureau of Economic Research.
+
+\item Calomiris, C., Longhofer, S. D., & Miles, W. (2009). The (mythical?) housing wealth effect (No. w15075). National Bureau of Economic Research.
+
+\item Carroll, C. D., Otsuka, M., & Slacalek, J. (2011). How large are housing and financial wealth effects? A new approach. Journal of Money, Credit and Banking, 43(1), 55-79.
+
+\item Case, K. E., Quigley, J. M., & Shiller, R. J. (2005). Comparing wealth effects: the stock market versus the housing market. Advances in macroeconomics, 5(1).
+
+\item Jones, R. V., Fuertes, A., & Lomas, K. J. (2015). The socio-economic, dwelling and appliance related factors affecting electricity consumption in domestic buildings. Renewable and Sustainable Energy Reviews, 43, 901-917.
+
+
+\end{enumerate}
+
+\end{document}
+
+
+
+
+
+

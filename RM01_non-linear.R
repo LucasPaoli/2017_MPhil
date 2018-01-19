@@ -1,0 +1,106 @@
+##################################################
+# RM01 for Mphil in Environmental Policy
+# Is there a Housing Wealth Effect on Energy Consumption?
+# @ University of Cambridge
+# Lucas Paoli, lp485
+##################################################
+
+#################
+# Non-Linear relationships ?
+#################
+
+data.correct$T.FUEL = log(data.correct$FUELANNUAL+mean(data.correct$FUELANNUAL))/
+  (max(log(data.correct$FUELANNUAL+mean(data.correct$FUELANNUAL))))
+ggplot(data.correct)+geom_density(aes(x=FUELANNUAL))
+ggplot(data.correct)+geom_density(aes(x=T.FUEL))
+
+data.correct$T.HVAL = log(data.correct$HSVAL+mean(data.correct$HSVAL))/
+  (max(log(data.correct$HSVAL+mean(data.correct$HSVAL))))
+ggplot(data.correct)+geom_density(aes(x=HSVAL))
+ggplot(data.correct)+geom_density(aes(x=T.HVAL))
+
+data.correct$T.HHINCOME = log(data.correct$FIHHMNGRS_DV+mean(data.correct$FIHHMNGRS_DV))/
+  (max(log(data.correct$FIHHMNGRS_DV+mean(data.correct$FIHHMNGRS_DV))))
+ggplot(data.correct)+geom_density(aes(x=FIHHMNGRS_DV))
+ggplot(data.correct)+geom_density(aes(x=T.HHINCOME))
+
+data.correct$T.HHSAV = log(data.correct$FIYRDIC_DV+mean(data.correct$FIYRDIC_DV))/
+  (max(log(data.correct$FIYRDIC_DV+mean(data.correct$FIYRDIC_DV))))
+ggplot(data.correct)+geom_density(aes(x=FIYRDIC_DV))
+ggplot(data.correct)+geom_density(aes(x=T.HHSAV))
+
+names(data.correct)
+
+## Economics
+ggplot(data.correct)+geom_point(aes(x=T.HVAL,y=FUELANNUAL))
+ggplot(data.correct)+geom_point(aes(x=T.HVAL,y=T.FUEL))
+ggplot(data.correct)+geom_point(aes(x=T.HHSAV,y=FUELANNUAL))
+ggplot(data.correct)+geom_point(aes(x=T.HHSAV,y=T.FUEL))
+ggplot(data.correct)+geom_point(aes(x=T.HHINCOME,y=FUELANNUAL))
+ggplot(data.correct)+geom_point(aes(x=T.HHINCOME,y=T.FUEL))
+
+summary(lm.econ.full)
+Anova(lm.econ.full)
+lm.econ.tr = lm(FUELANNUAL ~ T.HHINCOME + T.HHSAV + JBSTAT + SAVE + FINNOW + FINFUT,data = data.correct)
+summary(lm.econ.tr)
+Anova(lm.econ.tr)
+
+lm.econ.tr.red = lm(FUELANNUAL ~ T.HHINCOME + SAVE + FINNOW,data = data.correct)
+summary(lm.econ.tr.red)
+Anova(lm.econ.tr.red)
+summary(lm.econ.red)
+lm.econ.f.tr = lm(T.FUEL ~ T.HHINCOME + SAVE + FINNOW,data = data.correct)
+summary(lm.econ.f.tr)
+Anova(lm.econ.f.tr)
+#################
+
+
+#################
+# Computing Full model
+#################
+# Taking stock
+summary(lm.full)
+Anova(lm.full)
+summary(lm.red)
+Anova(lm.red)
+
+lm.full.tr = lm(T.FUEL ~ HSVAL + T.HVAL + HHTYPE_DV + HSBEDS + TENURE_DV + T.HHINCOME +
+                  FINNOW + SAVE + JBSTAT + RACEL_DV + NCARS + FIHHMNGRS_DV + 
+                  ENVHABIT1_A + ENVHABIT8_A + FUELDUEL + AGE,data = data.correct)
+summary(lm.full.tr)
+Anova(lm.full.tr)
+
+model2.tr<-lm(T.FUEL ~ ., data=lm.full.tr$model)
+step(model2.tr, direction = 'both')
+
+lm.red.tr = lm(T.FUEL ~ HSVAL + HHTYPE_DV + HSBEDS + TENURE_DV + T.HHINCOME + 
+                 FINNOW + SAVE + RACEL_DV + NCARS + FIHHMNGRS_DV + ENVHABIT1_A + 
+                 FUELDUEL + AGE, data = data.correct)
+summary(lm.red.tr)
+Anova(lm.red.tr)
+plot(lm.red.tr)
+
+bptest(lm.red.tr)
+
+# Adding geo
+summary(lm.lat.full)
+
+lm.geo.tr = lm(T.FUEL ~ HSVAL + HHTYPE_DV + HSBEDS + TENURE_DV + T.HHINCOME + 
+                 FINNOW + SAVE + RACEL_DV + NCARS + FIHHMNGRS_DV + ENVHABIT1_A + 
+                 FUELDUEL + AGE + LAT, data = data.correct)
+summary(lm.geo.tr)
+Anova(lm.geo.tr)
+plot(lm.geo.tr)
+
+bptest(lm.geo.tr)
+
+# Adding London
+lm.ldon.tr = lm(T.FUEL ~ LONDON*(HSVAL + HHTYPE_DV + HSBEDS + TENURE_DV + T.HHINCOME + 
+                 FINNOW + SAVE + RACEL_DV + NCARS + FIHHMNGRS_DV + ENVHABIT1_A + 
+                 FUELDUEL + AGE + LAT), data = data.correct)
+summary(lm.ldon.tr)
+Anova(lm.ldon.tr)
+plot(lm.ldon.tr)
+
+bptest(lm.ldon.tr)
+#################
