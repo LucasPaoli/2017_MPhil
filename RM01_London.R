@@ -142,5 +142,17 @@ Anova(lm.nlon.red)
 plot(lm.nlon.red)
 
 bptest(lm.nlon.red)
+
+# Interactions ?
+lm.nlon.red.int = lm(formula = T.FUEL ~ HSVAL * (HHTYPE_DV + HSBEDS + TENURE_DV + 
+                   FINNOW + RACEL_DV + NCARS + ENVHABIT1_A + FUELDUEL + 
+                   AGE + LAT + T.HHINCOME), data = data.not.london)
+summary(lm.nlon.red.int)
+Anova(lm.nlon.red.int)
+plot(lm.nlon.red.int)
+
+bptest(lm.nlon.red.int)
 #################
+
+ggplot(data.not.london)+geom_point(aes(x=HSVAL,y=T.FUEL, colour=HHTYPE_DV))+theme_grey()
 

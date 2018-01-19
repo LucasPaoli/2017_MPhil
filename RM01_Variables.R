@@ -80,7 +80,7 @@ Cultural = c('QFHIGH', # Education
              'PAJU', # Father working when 14 yo?
              'MAJU', # Mother working when 14 yo?
              'PCHAS', # Has PC ?
-             'PCNET', # Has internet ,
+             'PCNET', # Has internet ?
              'PCBROAD', # Boradband ?
              'MOBUSE', # Using mobile ?
              'NETPUSE', # Often us internet
@@ -132,7 +132,9 @@ na.df = arrange(na.df,desc(NAs))
 class_variable = left_join(class_variable, na.df)
 
 # Removing variables with too many missing values
-ggplot(data=class_variable)+geom_histogram(aes(x=NAs))
+pNA = ggplot(data=class_variable)+geom_histogram(aes(x=NAs)) + theme_grey() +
+  xlab('Number of NAs in variable') + ggtitle('Histogram of the number of NAs per variables')
+pNA
 Variables_sub = class_variable[class_variable$NAs < 15,]
 
 # Selecting relevant variable
@@ -180,6 +182,9 @@ if (nrow(Variables_sub) == 39) {
     T # "HHEAT"
   )
   
+  Variables_sub$Relevance = Relevance
+  class_variable = left_join(class_variable,Variables_sub[,c('Variables','Relevance')],by='Variables',)
+  write_tsv(class_variable, "RM01_variables_selection.tsv")
   Variables_sub = Variables_sub[Relevance,]
 }
 
@@ -187,6 +192,7 @@ data.sub = data.df[,Variables_sub$Variables]
 data.sub = na.omit(data.sub)
 print('% of data having the variables of interest also having corrective variables')
 nrow(data.sub)/nrow(data.df)*100
+nrow(data.sub)/nrow(data.raw.df)*100
 ###################
 
 ###################
@@ -199,25 +205,34 @@ summary(data.sub$HSVAL)
 summary(data.sub$FUELANNUAL)
 
 p1 = ggplot(data.sub) +
-  geom_density(aes(x=HSVAL,fill='HSVAL',color='HSVAL'), alpha = .4)
+  geom_density(aes(x=HSVAL,fill='HSVAL',color='HSVAL'), alpha = .4) + theme_grey()+
+  ggtitle('HSVAL density function') + theme(legend.position='none')
 p2 = ggplot(data.sub) +
-  geom_density(aes(x=FUELANNUAL,fill='FUELANNUAL',color='FUELANNUAL'), alpha = .4)
+  geom_density(aes(x=FUELANNUAL,fill='FUELANNUAL',color='FUELANNUAL'), alpha = .4) + theme_grey() +
+  ggtitle('FUELANNUAL density function') + theme(legend.position='none')
 p3 = ggplot(data.sub) +
-  geom_point(aes(x=HSVAL,y=FUELANNUAL))
-plot_grid(p1,p2,p3)
+  geom_point(aes(x=HSVAL,y=FUELANNUAL)) + theme_grey()+ggtitle('FUELANNUAL ~ HSVAL')
 
 fuel.fit = fitdistr(data.sub$FUELANNUAL, densfun = 'normal')
+
+colors.pair = c("#9b599e","#95894d")
 p4 = ggplot() + 
-  geom_density(aes(x=rnorm(10000, mean = fuel.fit$estimate[[1]], sd = fuel.fit$estimate[[2]]),color='Model',fill='Model'),alpha=.4)+
-  geom_density(aes(x=data.sub$FUELANNUAL,color='Observed',fill='Observed'),alpha=.4)+
-  theme_grey()
+  geom_density(aes(x=rnorm(10000, mean = fuel.fit$estimate[[1]], sd = fuel.fit$estimate[[2]]),fill='Model'),color="#9b599e",alpha=.2)+
+  geom_density(aes(x=data.sub$FUELANNUAL,fill='Observed'),color="#95894d",alpha=.2)+
+  theme_grey() + xlab('FUELANNUAL') + ggtitle('FUELANNUAL density and fitted normal function') +
+  scale_fill_manual(name = '',values = colors.pair) +
+  theme(legend.position=c(.8,.8),legend.title = element_blank())
 p4
 pnorm(max(data.sub$FUELANNUAL),mean = fuel.fit$estimate[[1]],sd=fuel.fit$estimate[[2]],lower.tail = F)
 
 data.correct = data.sub[-which(data.sub$FUELANNUAL == max(data.sub$FUELANNUAL)),]
 p5 = ggplot(data.correct) +
-  geom_density(aes(x=FUELANNUAL,fill='FUELANNUAL',color='FUELANNUAL'), alpha = .4)
+  geom_density(aes(x=FUELANNUAL,fill='FUELANNUAL',color='FUELANNUAL'), alpha = .4) + theme_grey() +
+  ggtitle('Corrected FUELANNUAL density function') + theme(legend.position='none')
 p5
+
+p_plot1 = plot_grid(pNA,p3,p4,nrow=1,labels = 'AUTO')
+ggsave('Figure_NAs.pdf',p_plot1,width=17,height=5)
 
 # Other quantitative variables:
 data.correct
@@ -231,10 +246,6 @@ p6
 p7 = ggplot(data.correct) +
   geom_density(aes(x=FIYRDIC_DV), alpha = .4) + theme_grey()
 p7
-p8 = ggplot(data.correct) +
-  geom_abline(slope = 1) +
-  geom_point(aes(x=FIYRDIC_DV,y=FIHHMNGRS_DV)) + theme_grey()
-p8
 ###################
 
 ###################

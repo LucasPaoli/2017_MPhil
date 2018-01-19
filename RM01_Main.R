@@ -66,6 +66,7 @@ clust.env = get.pam.cluster(dist.env, data.correct, env.red)
 lm.env.clust = lm(FUELANNUAL ~ as.factor(clust.env) ,data = data.correct[,c(Y,env.red)])
 summary(lm.env.clust)
 Anova(lm.env.clust)
+ggsave('Figure_clust.pdf')
 
 # Environment Cluter (full)
 dist.env.f <- daisy(data.correct[,names(data.correct) %in% Environmental],metric = "gower")
@@ -173,7 +174,11 @@ lm.lat.res = lm(lm.red$residuals ~ LONDON+LAT, data = data.correct)
 summary(lm.lat.res)
 Anova(lm.lat.res)
 
-ggplot(data.correct)+geom_boxplot(aes(y=FUELANNUAL,x=factor(LAT)))+theme_grey()
+p.lat = ggplot(data.correct)+geom_boxplot(aes(y=lm.red$residuals,x=factor(round(LAT,digits = 2)),color=REGION))+theme_grey()+
+  xlab('Latitude')+ylab('Model residuals')+
+  scale_color_manual(values=color.palette, name = 'Regions')
+p.lat
+ggsave('Figure_latitude.pdf',p.lat,width=7)
 ggplot(data.correct)+geom_boxplot(aes(y=FUELANNUAL,x=LONDON))+theme_grey()
 
 lm.lat.full = lm(formula = FUELANNUAL ~ HSVAL + HHTYPE_DV + HSBEDS + TENURE_DV + 

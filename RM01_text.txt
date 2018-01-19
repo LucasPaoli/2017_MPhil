@@ -1,0 +1,169 @@
+Introduction
+
+The housing wealth effect, however controversial in certain cases (Buiter, 2008; Calomiris et al., 2009), corresponds to the positive relationship between perceived housing wealth and consumption (Case et al., 2005; Carroll et al., 2011). Said effect and its relationship to energy consumption will be investigated within the given dataset.
+
+Before going any further, can we first deduce what kind of model would we expect ? What variables and factors would one expect to be relevant to this question ? Surely physical characteristics of the house would be of key importance (e.g. its size, the number of persons living in it, the time spent in the house, the thermic isolation). Obviously, the economics of the household would as well, as directly influencing the possible amount of money spendable on energy consumption (e.g. household total income, future financial perspective). Additionally, some behavioural factors, which could be described as socio-cultural, have been shown to be quite crucial (e.g. education, environmental awareness or the use of dwelling appliances). Finally, the climate and outside temperatures would not have the least effect. 
+
+One would therefore expect a model as follows:
+
+$Consumption_{i} = Intercept + Climate_i + House_i + Economics_i + SocioCultural_i + E_{i}$ with $ E_{i} sim mathcal{N}(0,sigma^2)$ and $i$ the household.
+
+Which one would want to compare to:
+$Consumption_{i} = Intercept + HousingWealth_i +Climate_i + House_i + Economics_i + SocioCultural_i + E_{i}$
+
+With that in mind, I will first perform a preliminary data analysis, which includes data selection and transformation, followed by the models construction and evaluation and, finally, results well be further interpreted and discussed. 
+
+All analysis were performed on R version 3.3.2 and the source scripts are available on Github (http://bit.ly/2DqV0B1).
+
+section{Preliminary Data Analysis}
+subsection{Sorting variables}
+
+Before any further considerations, variables were carefully assessed and sorted by categories. Based on previous readings and interpretations as well as arbitrary judgements the variables were sorted as follows:
+
+$Y$ (Response variable: $FUELANNUAL$). The annual spending of combined gas and electricity is the proxy for energy consumption.
+$X$ (Explaining variable of interest: $HSVAL$). The amount of money for which the respondents would expect to sell their house is the proxy for perceived housing wealth.
+$Dynamics$ (Explaining variables related to regional and yearly dynamics).
+$Household$ (Explaining variables related to the households size and composition). Notably, there is no direct size measure of the house, indirect indication however are included, such as the number of bedrooms.
+$Economics$ (Explaining variables related to the households economics). This includes, for instance, information such as the gross monthly income of the household.
+$Cultural$ (Explaining variables related to the households cultural characteristics). That category takes into account factors such as education level.
+$Environmental$ (Explaining variables related to the households environmental behaviour). This uses the results of energy consumption behaviours.
+$Fuel & Heating$ (Explaining variables related to the households fuel bills and heating). This final category includes specificities such as separate bills between gas and electricity or the presence of central heating systems.
+
+
+Dealing with missing values
+After a first glimpse of dataset, the need to deal with missing values appear to be obvious. Due to the consequent size of the dataset (4534 observations) I choose a rather conservative way of approaching the issue. Firstly, all observations (rows) with missing values in either $FUELANNUAL$ or $HSVAL$ were removed, as they do not contain the variables of interests. Subsequently, the rest of the variables were pre-selected based on the number of missing observations. Figure 1 indicates three main group of variables, with either less than 15% of missing values, roughly between 35 and 50% and finally more than 65%. Only the first category of variables was kept in order to maximise the number of observations. However, a sanity check was subsequently performed in order to ensure that no key information was dropped in the process.
+
+
+In the end, remaining missing values from selected variables were removed. Leading to a total of 2193 observations, 76.3% of the previous dataset and 48.4% of the initial one. A summary of the selection process can be found in the companion table textit{RM01_variables_selection.tsv}, which includes the initial variables' categories, the percentage of missing values, and if they met the condition, whether they were selected or not. Variables such as $AGEGR10_DV$ or $HSOWND$ were not selected on the basis that other variables, namely $TENURE_DV$ and $BIRTHY$ represented similar information with more precisions. Additionally, variables concerning the use of the internet or of a mobile were not selected in the context of very little information on the overall dwelling appliances, potential factor that was therefore eluded.
+
+Investigate normality of quantitative variables
+
+Amongst the 33 variables pre-selected on a normative basis, 4 are quantitative. As such, one ought to assess their distributions.
+
+
+$FUELANNUAL$: The annual spending on gas and electricity.
+$HSVAL$: The perceived housing wealth.
+$FIHHMNGRS_DV$: The gross monthly income of the household.
+$FIYRDIC_DV$: The annual income related to savings and investments.
+
+
+Firstly, figure 1B indicates that on the first glance, one might expect to find a positive housing wealth effect. Additionally, the $FUELANNUAL$ data appears to include an outlier, a value almost 15-fold over the mean not following the same pattern as the rest of the data. This is particularly visible on figure 1C. Subsequently fitting a normal distribution to the $FUELANNUAL$ data allows to estimate said distribution as the following $mathcal{N}(1293,624^2)$. Under that distribution, the probability of observing the outlier is of $3.25e^{-107}$, as such it is removed from the dataset. 
+
+
+After said correction, the distributions of the four stated variables were assessed as showed in figure 2A-D. The observation of a systematic skew towards increasing value lead to the use of a log-ratio transformation (offsetting by the mean), where:$x=log(x+mean(log(x))/max(log(x+mean(log(x)))$,producing the following variables: (i) $T.FUEL$, (ii) $T.HVAL$, (iii) $T.HHINCOME$, (iv) $T.HHSAV$.
+
+The distribution of the first 3 are notably visibly improved (figure 2E-G). Additionally, in the process two unexpected ($.19.384765625$) values were identified in $FIHHMNGRS_DV$. As non numerical, they were treated as missing and removed.
+
+Geographical data
+As mentioned earlier, one might assume that the climate and exterior temperature would highly influence heat necessity and consequently energy consumption. Based on the sole regional location of each household, I chose to use the centroid latitude of the region as a proxy for the climatic conditions. All the geographical data retrieved was initially from the textit{Office of National Statistics and National Records Scotland data} as available here http://martinjc.github.io/UK-GeoJSON/.
+From the data, the centroids latitude and longitude were computed ($LONG$, $LAT$) for each regions, as well as the number of samples per regions ($NSAMPLES$) and a dummy variable separating London from the rest. This additionally enables a visual representation of the survey, as seen in figure 2.
+
+
+Data encoding and transformation
+Firstly, some additional variables were computed based on the initial dataset. As such the $AGE$ was deducted from available data ($YEAR-BIRHTY$) and $REGION$ is just of nominal equivalent of $GOR_DV$. Then the four geographical variables mentioned earlier as well as the four transformed variables, leading to the total number fo 43 variables.
+Finally, as the last step each pre-selected variable was inspected and, if necessary, re-encoded in the appropriate data type, namely quantitative (<dbl> or <int>), ordinal (<ord>) or nominal (<fctr>). One can get a $glimpse()$ at the modified data structure, which will be the basis for the statistical analysis:
+
+
+
+Model Selection and Evaluation
+Significant variables
+After a careful inspection as well as a normative pre-selection based on their characteristics and meaningfulness, variables were tested for their relationship with the response variable, proxy for the energy consumption. The statistical analysis was performed (1) on the non-transformed variables, (2) then adding the geographical parameters, (3) introducing the transformed variables instead of the non-transformed and (4) investigating matters related to London
+
+The first approached used was to build linear models within in variable category (e.g. $Economics$) and identify the relevant subset of variables.  In addition of the response variable and the housing wealth, this process identified 13 explanatory variables: $NCARS$, $ENVHABIT1_A$, $ENVHABIT8_A$, $SAVE$, $T.HHINCOME$, $FINNOW$, $FIYRDIC_DV$, $RACEL_DV$, $AGE$, $HHTYPE_DV$, $HSBEDS$, $TENURE_DV$, $FUELDUEL$.
+ 
+In addition of this method, the possibility of creating indexes through clustering variables within each category was investigated as follows:
+
+Significant variables from each category were used to compute the Gower distances between observations.
+The distance matrix was clustered (Partitioning Around Medoids - PAM) after an estimation of the optimal number of clusters.
+The category, now transformed into a nominal variable, was tested against $FUELANNUAL$ in a linear model.
+
+
+Figure 4A illustrates the two clusters identified in the $Environmental$ variables category. However, if such method can synthesise a lot of information and reduce de dimensionality of the data, using the clusters was less performant than the initial variables in all categories.
+
+The 13 variables previously identified were used to build a first comprehensive model. Due to the number of variables at stake, I arbitrarily choose not to investigate potential interactions between said variables. Specific interactions, however, will be investigated in two cases on subsequent models. A two-directional AIC optimisation was performed to identify the relevant combination of the 13 variables. Sanity checks were performed, and the variables significance was then confirmed by a type II anova.
+
+
+
+The type II anova reports the sum of square, and therefore the amount of variable explained by the variable (as compared to the Residuals), the degrees of freedom (Df) and the significance (p-value on the F statistic). Note that the significance threshold used throughout the analysis is $alpha = 0.05$.
+
+The former anova table corresponds to the following model:
+
+
+
+
+Interestingly, the model is highly significant and the adjusted $R^2$ is roughly 22.8%. However, the studentized Breusch-Pagan test indicates a significant heteroskedasticity, which I will try to address in the following models.
+
+Geographical variables
+
+The previous model does account for most of the categories stated in the introduction. However, the regional and climatic conditions are not yet accounted for. The subsequent model therefore introduces the latitude as an explanatory variable (I acknowledge that directly using the nominal variable $REGION$ could have brought similar insights, but doesn't introduce the quantitive latitudinal gradient).
+
+
+
+
+Latitude indeed is a significant explanatory variable ($p-value = 1.049e^{-06}$, type II anova). Its effects can be captured in table 1, along with the ones of other explanatory variables.
+
+The summary table of the linear models enables to interpret the effect of each explanatory variable. Firstly the significance of the explanatory variable is reported by the p-value. However, it is important to highlight that comparing a specific category of a nominal or ordinal variable to the intercept might be significant, despite the overall variable being significant (e.g. the reported categories of $FINNOW$ hereby reported do not appear as significant, whereas a type II anova indicates a p-value of $0.031368$).
+In addition of significance, the table reports the estimate, which is the estimated parameter of the linear relationship. In a linear model $Y_i = mu + beta X_i+ E_{i}$ with $ E_{i} sim mathcal{N}(0,sigma^2)$, $mu$ would be the intercept and $beta$ the estimate for the quantitative explanatory variable $X$. Assuming $X$ is $LAT$, from the previous table we have $mu = -1.954e^{03}$ and $beta = 3.462e^{01}$.
+
+This effect of the latitude can be represented based on the residuals from the former model (Figure 3B). Despite being weak, the increase of consumption does follow the increase in latitude, apart from London which seems to be behaving differently.
+
+
+Log-Ration relationships
+
+However, transforming the quantitative variables using a log-ratio improved the normality of the distributions. Consequently, this part will investigate the effect of transforming the quantitative variables on the previous model.
+
+
+
+The improvement was not highly consequential, though the model's adjusted $R^2$ is now of 24%. Nevertheless, if far from being removed, the heteroskedasticity formerly observed was reduced by the transformation.
+
+London and the other regions
+
+As seen previously, we noticed the particular behaviour of London. As such, a variable $LONDON$, representing either London or the other regions, was introduced in the model as an interaction with all the other variables.
+
+
+
+The introduction of the variable and its interactions was of indeed significant and also increased the overall explanatory power of the model. To investigate this result further, the dataset was subsequently split into the data from London and the data from the rest of the UK.
+
+A similar process as what was described in 3.1 was conducted and this allowed to build (1) a totally model for London and (2) revise the results on the rest of the UK, with the additional inclusion of geographical and transformed variables.
+
+
+
+    
+
+The latter model is notable in 4 main ways. First, the number of explanatory variables has massively decreased, $HHTYPE_DV$ being from far the most relevant. Secondly, the adjusted $R^2$ reached roughly 41% and, thirdly, if still significant on using a studentized Breusch-Pagan test, the heteroskedasticity is almost removed. Finally, probably the most interesting result is that the housing wealth effect ($HSVAL$) is not significant in London.
+
+The similar process was realised for the rest of the UK, with the addition of potential interaction between $HSVAL$, the explanatory variable of interest, and other explanatory variables. This leads to the following (and final) model:
+
+
+
+Interestingly, the model remains quite similar to the ones built on the overall dataset. $HSVAL$ does indeed have some significant interactions (for example with $HHTYPE_DV$), which can be formalised as follows:
+
+$Y_{ij} = mu + alpha_i + beta X_{ij} + gamma_i X_{ij} +  E_{i}$ with $ E_{ij} sim mathcal{N}(0,sigma^2)$, $i$ the categories of $HTTYPE_DV$ and $j$ the observations.
+
+This can be interpreted as $alpha_i$ being the mean of each category, $beta$ the slope of the $Y sim X$ relationship and $gamma_i$ the deviation of that slope, for each category.
+
+Notably, the model estimates $beta = -6.565e^{-07}$ and $gamma_i = 1.420e^{-07}$ for $i$ being "1 adult, 1 child". Which does not go in the direction of a general housing wealth effect in the rest of the UK either.
+
+Moreover, similarly to the model designed for London, heteroskedasticity is highly reduced. Particularly, when looking at the diagnostic plots (see figure 4B and C), I argue that if there still is some issues on the textit{QQPlot} as the absolute values increase, the textit{Residuals vs Fitted} plot does not show much deviation from 0.
+
+
+If the results have already bee commented through the models constructions and evaluation, this section will provide a synthesis and further interpretation. Firstly, the evolution of the models shows three main influences:
+
+log-ratio transformation of the quantitative variables were beneficial for the linear regression, particularly conrcerning $FUELANNUAL$ ($T.FUEL$), the response variable, and $FIHHMNGRS$ ($T.HHINCOME$).
+The mean latitude of the region, which is likely to be a proxy for climatic conditions does influence energy consumption
+London and the rest of the UK display two very different behaviours, leading to the construction of two very different models. 
+
+In the case of London, the remaining explanatory variables were $HHTYPE_DV$ (the structure of the household), $SAVE$ (whether people are able to save money monthly) and $ENVHABIT1_A$ (how often do people leave the tv on standby for the night), which would be representative of the categories $Household$, $Economics$ and $Environmental$.
+
+For the rest of the UK, the main explanatory variables were $HSVAL$, $HHTYPE_DV$, $HSBEDS$, $TENURE_DV$, $FINNOW$, $RACEL_DV$, $NCARS$, $ENVHABIT1_A$, $FUELDUEL$, $AGE$, $LAT$, $T.HHINCOME$.
+Said variables can be ordered as follow:
+$Dynamics$: $LAT$
+$Household$: $HHTYPE_DV$, $HSBEDS$, $TENURE_DV$
+$Economics$: $FINNOW$, $T.HHINCOME$
+$Cultural$: $AGE$, $RACEL_DV$
+$Environmental$: $NCARS$, $ENVHABIT1_A$
+$Fuel & Heating$: $FUELDUEL$ 
+
+This tends to confirm the complexe and multifactorial nature of energy consumption that had been identified (Jones et al., 2015). The large number of observations and there even distribution across regions and working status (roughly 2 thirds employed, a third retired and the rest) gives statistical strength to the results. Additionally the possibility to correct for a wide variety of factors, from cultural to economical enables to capture the complexity of the explanatory variables. However, the number of variable that could be tested did not enable some key hypothesis, such as the influence of electrical appliance or the actual size of of the house in square meters. In addition, if greatly reduced, the heteroskedasticity might still be an issue to the robustness of the models.
+
+Finally, taking into account the limits of the analysis, results nevertheless suggest a weak if not inexistent housing wealth effect on energy consumption in the UK. Indeed, in the case of London, the housing wealth was not identified as a significant explanatory variable at all. For the rest of the UK, the situation is slightly more complicated. As explicated in part 3.4, the final model does attest for a significant role of housing effect. However, if in a non interactive mode, the estimate would be $3.348e^{-08}$, housing wealth can be involved various interactions which can lead to negative wealth effects in some cases. In any case, the general trend remains a positive but the dedicated $R^2$ is low (3,7% out of the 29.9% from the last model).

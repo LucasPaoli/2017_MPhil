@@ -59,6 +59,7 @@ plot.positions['Scotland','value']=sum(!is.na(subset(data.correct, REGION == 'Sc
 #map <- get_map(location = c(lon = -2.5, lat =  54.2), zoom = 6, maptype = "satellite", source = 'google')
 #p_map = ggmap(map)+
 p_map = ggplot() +
+  theme_grey()+
   geom_polygon(data = regions_df,
                aes(x = long, y = lat, group = group, fill = Fill),
                color = "grey20", size = 0.2) + 
